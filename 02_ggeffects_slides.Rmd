@@ -1,0 +1,228 @@
+---
+title: "Marginální efekty v R"
+author: "Aleš Vomáčka"
+date: "20. dubna 2021"
+output:
+  ioslides_presentation:
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(ggeffects)
+library(gt)
+library(gtsummary)
+
+ess = read_rds("data/ess_cleaned.rds")
+```
+
+```{r models-setup}
+mod_example = glm(vote ~ poly(age, degree = 2)*education, family = "binomial" ,data = ess[!is.na(ess$age), ])
+```
+
+# Co jsou marginální efekty?
+
+## Motivační příklad
+
+- Otázka: *Jak souvisí volební účast s věkem a dosaženým vzděláním?*
+- Data z European Social Survey, 8. vlna
+- 3 proměnné:
+  - Deklarovaná účast v posledních parlamentních volbách (`vote`)
+  - Věk respondenta (`age`)
+  - Nejvyšší dosažené vzdělání (`education`)
+- Zdánlivě jednoduchý úkol, ale...
+
+## Motivační příklad
+
+- Základní model:
+
+$$
+vote = age + education + \epsilon_{norm}
+$$
+- Ale vote je binární proměnná:
+
+$$
+logit(vote) = age + education + \epsilon_{binom}
+$$
+- Ale vztah mezi vol. účastí a věkem nemusí být lineární:
+
+$$
+logit(vote) = age + age^2 +  education + \epsilon_{binom}
+$$
+- Ale vztah mezi vol. účastí a věkem se může lišit podle vzdělání:
+
+$$
+logit(vote) = age + age^2 + education + age*education + \\ age^2 * education + \epsilon_{binom}
+$$
+
+
+## Motivační příklad
+
+<div style="float: left; width: 40%;">
+
+- Co se dá vyčíst z téhle tabulky?
+  - Nic moc.
+- Závislá proměnná v logitech
+- Věk má kvadratický člen
+- 6 interkačních členů
+
+</div>
+
+<div style="float: right; width: 60%;">
+
+```{r mod1-table}
+mod_example %>% tbl_regression(labels = list(`poly(age, degree = 2)*education` ~ "age*education")) %>% 
+  as_gt() %>% 
+  tab_options(table.font.size = "small")
+```
+
+</div>
+
+
+## Motivační příklad
+
+- Naštěstí nemusíme spoléhat pouze na regresní koeficienty
+- Alternativním řešením jsou marginální efekty
+
+- Marginální efekt:
+  - predikovaná hodnota závislé proměnné `y` v závilosti a nezávislé proměnné `x` (zatímco jsou hodnoty ostatních nezávislých proměnných drženy konstantní)
+  - Alternativně: Efekt nezávislé proměnné `x` na závislou proměnnou `y`, pokud kontrolujeme pro ostatní proměnné
+
+## Co jsou marginální efekty?
+
+- Pokud vytvoříme model
+
+```{r mod-simple, echo=TRUE}
+mod1 = glm(vote ~ age, family = "binomial", data = ess)
+```
+
+- Můžeme spočítat predikovanou pravděpodobnost `vote=1` v závislosti na konkrétních hodnotách `age`:
+
+```{r marginal-simple}
+ggeffect(mod1, terms = "age [15, 25, 35, 45, 55, 65]") %>% 
+  select(-c("std.error", "group")) %>%
+  mutate(across(-x, scales::percent, accuracy = 1)) %>% 
+  gt() %>%
+  cols_label(x = "Age",
+             predicted = "Predicted prob.",
+             conf.low = "95% CI - lower",
+             conf.high = "95% CI - higher") %>% 
+  tab_options(table.width = 800)
+```
+
+## Co jsou marginální efekty?
+
+Predikované pravděpodobnosti můžeme zakreslit do grafu:
+
+```{r margin-plot-simple}
+plot(ggeffect(mod1, terms = "age [15, 25, 35, 45, 55, 65]"))
+```
+
+## Co jsou marginální efekty?
+
+<div style="float: left; width: 50%;">
+
+- Pokud má model více než 1 prediktor:
+
+```{r mod-two, echo=TRUE}
+mod2 = glm(vote ~ age + education,
+        family = "binomial", data = ess)
+```
+
+- Můžeme spočítat predikovanou pravděpodobnost v závislosti na více prediktorech:
+
+</div>
+
+
+<div style="float: right; width: 50%;">
+
+```{r marginal-two}
+ggeffect(mod2, terms = c("age [15,55, 75]", "education")) %>% 
+  select(-c("std.error")) %>%
+  mutate(across(-c(x, group), scales::percent, accuracy = 1)) %>% 
+  gt() %>%
+  cols_label(x = "Age",
+             predicted = "Predicted prob.",
+             conf.low = "95% CI - lower",
+             conf.high = "95% CI - higher")
+```
+
+## Co jsou marginální efekty?
+
+<div style="float: left; width: 50%;">
+
+- Pokud pro nějaký prediktor chceme kontrolovat, ale nezajímá nás interpretačně, můžeme ho zafixovat na nějaké rozumné hodnotě (např. průměru)
+
+
+```{r mod-partial, echo=TRUE, eval=FALSE}
+mod2 = glm(vote ~ age + education,
+        family = "binomial", data = ess)
+```
+
+
+</div>
+
+<div style="float: right; width: 50%;">
+
+- Dostaneme predikované hodnoty `y` v závislosti na `x`, pokud jsou ostatní prediktory konstantní:
+
+<br>
+
+```{r marginal-partial}
+ggeffect(mod2, terms = c("education")) %>% 
+  select(-c("std.error", "group")) %>%
+  mutate(across(-c(x), scales::percent, accuracy = 1)) %>% 
+  gt() %>%
+  cols_label(x = "Age",
+             predicted = "Predicted prob.*",
+             conf.low = "95% CI - lower",
+             conf.high = "95% CI - higher") %>% 
+  tab_source_note("*For people of average age")
+```
+</div>
+
+## Zpět k motivačnímu příkladu
+
+<div style="float: left; width: 40%;">
+
+- Místo tabulky regresních koeficientů spočítáme marginální efekty věku a dosaženého vzdělání a zaneseme na graf
+
+</div>
+
+<div style="float: right; width: 60%;">
+
+```{r mod1-table-again}
+mod_example %>% tbl_regression(labels = list(`poly(age, degree = 2)*education` ~ "age*education")) %>% 
+  as_gt() %>% 
+  tab_options(table.font.size = "small")
+```
+
+</div>
+
+
+## Zpět k motivačnímu příkladu
+
+```{r example-final, fig.width=10, fig.height=5.5}
+plot(ggeffect(mod_example, terms = c("age [all]", "education"))) + theme(legend.position = "bottom")
+```
+
+# Marginální efekty v R
+
+## Marginální efekty v R
+
+- Balíček `ggeffects`
+- 3 primární funkce:
+  - ggpredict - založeno na `stats::predict()`
+  - ggeffect - založeno na `effects::effect()`
+  - ggemeans - založeno na `emeans::emeans()`
+  
+<br>
+
+- dataframe marg. efektů v tidy formátu
+- pomocné funkce pro transformace
+- Podporuje řadu modelů od základních (G)LM, GAM, mixed modely, bayesiánské modely, survival modely, a další
+
+# R inteRmezzo!
+
