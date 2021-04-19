@@ -6,6 +6,6 @@ I když jsou některé regresní modely jednoduše interpretovatelné pomocí ta
 
 ## Struktura repozitáře
 
-Repozitář obsahuje všechny materiály použité v semináři. Data původně stažené z https://www.europeansocialsurvey.org/, 8. vlna pro Českou republiku.
+Repozitář obsahuje všechny materiály použité v semináři. Data původně stažené z https://www.europeansocialsurvey.org/, 8. vlna pro Českou Republiku.
 
-Prezentace ke stažení v HTML formátu [zde](https://github.com/alesvomacka/workshop_ggeffects/raw/master/02_ggeffects_slides.html).
+Prezentace ke stažení v HTML formátu [zde](https://github.com/alesvomacka/workshop_ggeffects/blob/master/02_ggeffects_slides.html) (*Uložit jako...*).
