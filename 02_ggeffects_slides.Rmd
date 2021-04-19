@@ -226,3 +226,20 @@ plot(ggeffect(mod_example, terms = c("age [all]", "education"))) + theme(legend.
 
 # R inteRmezzo!
 
+## Grafy marginálních efektů jinde
+
+- STATA - `margins` a `marginsplot` funkce
+
+<br>
+
+- SPSS - `EMMEANS` funkce (ale pouze pro klasickou [ANOVU](https://www.ibm.com/support/pages/will-spss-produce-marginal-effects-or-elastiticities-generalized-linear-models-such-logit-and-probit-models))?
+
+## Závěr
+
+- Materiály k workshopu na githubu: https://github.com/alesvomacka/workshop_ggeffects
+
+<br>
+
+- Podrobnější detaily ggeffects: https://strengejacke.github.io/ggeffects/
+
+# Děkuji za pozornost!

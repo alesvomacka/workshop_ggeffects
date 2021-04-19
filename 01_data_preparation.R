@@ -12,7 +12,8 @@ ess = ess %>% mutate(vote = na_if(vote, "Not eligible to vote"),
                                               `Střední bez M`  = levels(ess$edlvdcz)[4:5],
                                               `Střední s M` = levels(ess$edlvdcz)[6:9],
                                               `Vysokoškolské` = levels(ess$edlvdcz)[10:12]),
-                     age = as.numeric(as.character(agea)))
+                     age = as.numeric(as.character(agea)),
+                     happy_int = as.numeric(happy) - 1)
 
 
 # Data export -------------------------------------------------------------
